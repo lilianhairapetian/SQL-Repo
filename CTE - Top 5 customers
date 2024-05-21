@@ -1,0 +1,40 @@
+# Find the average amount paid by the top 5 customers
+
+WITH amount_paid_cte(customer_id,fist_name,last_name,city,country) AS
+		(SELECT	B.customer_id,
+		B.first_name,
+		B.last_name,
+		E.country,
+		D.city,
+				SUM(A.amount)	AS	total_amount_paid
+		FROM	payment	A
+			JOIN	customer	B	ON	B.customer_id	=	A.customer_id
+			JOIN	address	C	ON	C.address_id	=	B.address_id
+			JOIN	city	D	ON	D.city_id	=	C.city_id
+			JOIN	country	E	ON	E.country_id	=	D.country_id
+		WHERE	D.city	IN	(SELECT	D.city
+			FROM	customer	B
+			JOIN	address	C	ON	C.address_id =	B.address_id
+			JOIN	city	D	ON	D.city_id	 =	C.city_id
+			JOIN	country	E	ON	E.country_id =  D.country_id
+		WHERE	E.country	IN	(SELECT	E.country
+			FROM	customer	B
+			JOIN	address	C	ON	C.address_id =B.address_id
+			JOIN	city	D	ON	D.city_id	=C.city_id
+			JOIN	country	E	ON	E.country_id=D.country_id
+		GROUP	BY	E.country
+		ORDER	BY	COUNT(B.customer_id)DESC
+		LIMIT	10)
+		GROUP	BY	E.country,
+					D.city
+		ORDER	BY	COUNT(B.customer_id)DESC
+		LIMIT	10)
+		GROUP	BY B.customer_id,
+		B.first_name,
+		B.last_name,
+		E.country,
+		D.city
+		ORDER	BY	SUM(A.amount)	DESC
+		LIMIT	5 )
+SELECT AVG(total_amount_paid)
+FROM amount_paid_cte
